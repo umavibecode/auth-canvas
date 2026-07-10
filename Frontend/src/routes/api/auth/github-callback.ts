@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         code,
         redirect_uri:
           process.env.GITHUB_CALLBACK_URL ||
-          `${new URL(request.url).origin}/api/auth/github-callback`,
+          `${new URL(request.url).origin}/api/auth/github/callback`,
       }),
     });
 

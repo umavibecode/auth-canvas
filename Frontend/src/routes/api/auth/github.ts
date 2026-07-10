@@ -2,7 +2,7 @@ export async function GET(request: Request) {
   try {
     // Get the callback URL from environment or construct it
     const callbackUrl = process.env.GITHUB_CALLBACK_URL ||
-      `${new URL(request.url).origin}/api/auth/github-callback`;
+      `${new URL(request.url).origin}/api/auth/github/callback`;
 
     // Redirect to GitHub OAuth
     const params = new URLSearchParams({

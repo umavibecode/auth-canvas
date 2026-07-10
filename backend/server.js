@@ -9,6 +9,8 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const callbackURL =
+  process.env.GITHUB_CALLBACK_URL || `http://localhost:${PORT}/api/auth/github/callback`;
 
 app.use(cors());
 app.use(express.json());
@@ -40,15 +42,19 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL:
-        process.env.GITHUB_CALLBACK_URL || `http://localhost:${PORT}/auth/github/callback`,
+      callbackURL,
     },
     (accessToken, refreshToken, profile, done) => {
-      let user = users.find((u) => u.githubId === profile.id);
+      let user = users.find((u) => u.githubId === String(profile.id));
       if (!user) {
         const email =
-          (profile.emails && profile.emails[0] && profile.emails[0].value) || profile.username;
-        user = { id: Date.now(), email, githubId: profile.id };
+          profile.emails?.[0]?.value || profile.username || `${profile.id}@github.local`;
+        user = {
+          id: Date.now(),
+          email,
+          githubId: String(profile.id),
+          name: profile.displayName || profile.username,
+        };
         users.push(user);
       }
       return done(null, user);
@@ -95,17 +101,25 @@ app.get(
 );
 
 app.get(
-  "/auth/github/callback",
-  passport.authenticate("github", { failureRedirect: "/auth/github/failure" }),
+  "/api/auth/github/callback",
+  passport.authenticate("github", { failureRedirect: "/api/auth/github/failure" }),
   (req, res) => {
-    // Successful authentication, issue JWT and return JSON
     const user = req.user;
-    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET || "secret", { expiresIn: '24h' });
-    res.json({ success: true, message: 'GitHub login successful', token, user: { id: user.id, email: user.email } });
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "24h" }
+    );
+    res.json({
+      success: true,
+      message: "GitHub login successful",
+      token,
+      user: { id: user.id, email: user.email, name: user.name },
+    });
   }
 );
 
-app.get("/auth/github/failure", (req, res) => {
+app.get("/api/auth/github/failure", (req, res) => {
   res.status(401).json({ success: false, message: "GitHub authentication failed" });
 });
 

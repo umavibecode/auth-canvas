@@ -106,20 +106,10 @@ function AuthPage() {
     }
   }
 
-  async function handleGithub() {
+  function handleGithub() {
     setServerError(null);
     setLoading(true);
-    try {
-      try {
-        await fetch("http://localhost:3000/api/auth/github", { method: "POST" });
-      } catch {
-        /* mock */
-      }
-      await new Promise((r) => setTimeout(r, 700));
-      setSuccess(true);
-    } finally {
-      setLoading(false);
-    }
+    window.location.assign("http://localhost:3000/api/auth/github");
   }
 
   return (
